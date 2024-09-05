@@ -2,7 +2,7 @@
 //  DraggableView.swift
 //  image
 //
-//  Created by dingtone on 2024/8/26.
+//  Created by lucky on 2024/8/26.
 //
 
 import Cocoa
@@ -13,6 +13,8 @@ import Cocoa
 //    case success(String, String) =
 //    case fail =
 //}
+
+let tinyUserDefaultsKey = "com.lucky.tinyUserDefaultsKey"
 
 enum ImageHandleStatus {
     case waiting
@@ -61,21 +63,28 @@ class DraggableView: NSView {
     
     var fileList: [FileModel] = [] {
         didSet {
+            scrolllView.isHidden = fileList.count <= 0
+            clearButton.isHidden = fileList.count <= 0
             tableView.reloadData()
             fileButton.isHidden = fileList.count > 0
             fileTips.isHidden = fileList.count > 0
+            addKeyView.isHidden = fileList.count > 0
             
-            CompressTools.tinifyCompress(fileList) { [weak self] in
-                DispatchQueue.main.async {
-                    self?.tableView.reloadData()
-                }
-            }
+//            CompressTools.tinifyCompress(fileList) { [weak self] in
+//                DispatchQueue.main.async {
+//                    self?.tableView.reloadData()
+//                }
+//            }
         }
     }
     
     var fileButton: NSButton!
     var fileTips: NSTextField!
+    var addKeyView = AddKeyView()
+    
+    var scrolllView: NSScrollView!
     var tableView: NSTableView!
+    var clearButton: NSButton!
     
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -146,31 +155,94 @@ class DraggableView: NSView {
         }
         fileTips = textField
         
+        self.addSubview(addKeyView)
+        addKeyView.snp.makeConstraints { make in
+            make.top.equalTo(textField.snp.bottom).offset(30)
+            make.left.right.equalToSuperview()
+        }
+        
+        scrolllView = NSScrollView()
+        scrolllView.hasHorizontalScroller = true
+        scrolllView.autohidesScrollers = true
+        scrolllView.isHidden = true
+        scrolllView.translatesAutoresizingMaskIntoConstraints = false
+        self.addSubview(scrolllView)
+        scrolllView.snp.makeConstraints { make in
+//            make.left.right.top.equalToSuperview()
+//            
+//            make.bottom.lessThanOrEqualToSuperview()
+            
+            make.top.equalTo(snp.top)
+                        make.bottom.equalTo(snp.bottom)
+                        make.left.equalTo(snp.left)
+                        make.right.equalTo(snp.right)
+        }
+        
         tableView = NSTableView()
         tableView.delegate = self
         tableView.dataSource = self
-        self.addSubview(tableView)
-        tableView.snp.makeConstraints { make in
-            make.left.right.top.equalToSuperview()
-            make.bottom.lessThanOrEqualToSuperview()
-        }
+        scrolllView.documentView = tableView
+//        scrolllView.addSubview(tableView)
+//        tableView.snp.makeConstraints { make in
+//            make.left.right.top.equalToSuperview()
+//            make.bottom.lessThanOrEqualToSuperview()
+//        }
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+
+        // 设置 tableView 视图到 scrollView 的 documentView 的约束
+//        tableView.snp.makeConstraints { make in
+//            make.edges.equalTo(scrolllView.contentView)
+//            make.width.equalTo(scrolllView.contentView)
+//        }
         
         let thumbnailColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("ThumbnailColumn"))
         thumbnailColumn.title = "Thumbnail"
         thumbnailColumn.width = 60
+        thumbnailColumn.headerCell = NSTableHeaderCell(textCell: "Thumbnail")
         tableView.addTableColumn(thumbnailColumn)
         
         let statusColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("StatusColumn"))
         statusColumn.title = "Status"
         statusColumn.width = 180
+        statusColumn.headerCell = NSTableHeaderCell(textCell: "Status")
         tableView.addTableColumn(statusColumn)
         
         let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("NameColumn"))
         nameColumn.title = "Name"
 //        thumbnailColumn.width = 200
+        nameColumn.headerCell = NSTableHeaderCell(textCell: "Name")
         nameColumn.resizingMask = .autoresizingMask
         tableView.addTableColumn(nameColumn)
         
+        
+        clearButton = NSButton()
+        
+        if #available(macOS 11.0, *) {
+            if let plusImage = NSImage(systemSymbolName: "clear", accessibilityDescription: nil) {
+                plusImage.size = NSSize(width: 44, height: 44)
+                clearButton.image = plusImage
+                clearButton.imageScaling = .scaleProportionallyUpOrDown
+            }
+        } else {
+            // Fallback on earlier versions
+            let plusImage = NSImage(named: "file_dir")
+            plusImage?.size = NSSize(width: 44, height: 44)
+            clearButton.image = plusImage
+            clearButton.imageScaling = .scaleProportionallyUpOrDown
+        }
+        clearButton.isHidden = true
+        clearButton.isBordered = false
+        clearButton.target = self
+        clearButton.action = #selector(clearAllData)
+        self.addSubview(clearButton)
+        clearButton.snp.makeConstraints { make in
+            make.size.equalTo(44)
+            make.bottom.right.equalToSuperview().inset(44)
+        }
+    }
+    
+    @objc func clearAllData() {
+        self.fileList = []
     }
     
     @objc func buttonClicked() {
@@ -273,5 +345,86 @@ extension DraggableView: NSTableViewDataSource, NSTableViewDelegate {
             return cellView
         }
         return nil
+    }
+}
+
+class AddKeyView: NSView {
+    
+    // 获取UserDefaults的实例
+    let defaults = UserDefaults.standard
+    
+    lazy var keyField: NSTextField = {
+        let textField = NSTextField()
+        textField.placeholderString = "input tinypng api key"
+        textField.font = NSFont.systemFont(ofSize: 20)
+        textField.alignment = .center
+        textField.wantsLayer = true
+        
+        textField.isBezeled = false // Remove bevel border
+        textField.backgroundColor = .white
+        textField.focusRingType = .none
+        
+        return textField
+    }()
+    
+    lazy var addButton: NSButton = {
+        let add = NSButton(title: "添加Tiny Key", target: self, action: #selector(addOrChangeKey))
+        add.bezelStyle = .rounded
+        return add
+    }()
+    
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        self.registerForDraggedTypes([.fileURL])
+        creatUI()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    func creatUI() {
+        
+        self.addSubview(keyField)
+        keyField.snp.makeConstraints { make in
+            make.top.centerX.equalToSuperview()
+            make.width.equalTo(400)
+        }
+        
+        self.addSubview(addButton)
+        addButton.snp.makeConstraints { make in
+            make.top.equalTo(keyField.snp.bottom)
+            make.width.equalTo(200)
+            make.height.equalTo(44)
+            make.bottom.centerX.equalToSuperview()
+        }
+        
+        // 读取存储的字符串数组
+        let savedStringArray = defaults.array(forKey: tinyUserDefaultsKey) as? [String]
+        showContent(text: savedStringArray?.first)
+    }
+    
+    func showContent(text: String?) {
+        keyField.stringValue = text ?? ""
+        if text != nil {
+            keyField.backgroundColor = .clear
+            keyField.isEnabled = false
+            addButton.title = "修改Tiny Key"
+        }else {
+            keyField.backgroundColor = .white
+            keyField.isEnabled = true
+            addButton.title = "保存Tiny Key"
+        }
+    }
+    
+    @objc func addOrChangeKey() {
+        
+        if keyField.isEnabled, keyField.stringValue.count > 0 {
+            let stringArray = [keyField.stringValue]
+            defaults.set(stringArray, forKey: tinyUserDefaultsKey)
+            showContent(text: keyField.stringValue)
+        } else {
+            showContent(text: nil)
+        }
     }
 }

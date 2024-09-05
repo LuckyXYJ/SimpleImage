@@ -2,7 +2,7 @@
 //  CompressTools.swift
 //  image
 //
-//  Created by dingtone on 2024/8/26.
+//  Created by lucky on 2024/8/26.
 //
 
 import Foundation
@@ -14,7 +14,10 @@ protocol CompressImage {
 
 struct CompressTools {
     static func tinifyCompress(_ images: [CompressImage], closure: (()-> Void)? = nil) {
-        let apiKey = ""
+        
+        let savedStringArray = UserDefaults.standard.array(forKey: tinyUserDefaultsKey) as? [String]
+        guard let apiKey = savedStringArray?.first else { return }
+        
         for imageURL in images {
             imageURL.changeStatus(.inProcess)
             

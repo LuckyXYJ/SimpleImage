@@ -2,7 +2,7 @@
 //  HomeViewController.swift
 //  image
 //
-//  Created by dingtone on 2024/8/24.
+//  Created by lucky on 2024/8/24.
 //
 
 import Cocoa

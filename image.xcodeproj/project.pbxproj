@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7B228F0B2C89C97500D08499 /* RenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B228F0A2C89C97500D08499 /* RenameView.swift */; };
+		7B228F0D2C89C98800D08499 /* RenameTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B228F0C2C89C98800D08499 /* RenameTools.swift */; };
 		7B6883962C79BEB80011996D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6883952C79BEB80011996D /* AppDelegate.swift */; };
 		7B6883982C79BEBA0011996D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B6883972C79BEBA0011996D /* Assets.xcassets */; };
 		7B68839B2C79BEBA0011996D /* Base in Resources */ = {isa = PBXBuildFile; fileRef = 7B68839A2C79BEBA0011996D /* Base */; };
@@ -19,6 +21,8 @@
 
 /* Begin PBXFileReference section */
 		0756656CEEFA2BF256090BBC /* Pods-image.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-image.debug.xcconfig"; path = "Target Support Files/Pods-image/Pods-image.debug.xcconfig"; sourceTree = "<group>"; };
+		7B228F0A2C89C97500D08499 /* RenameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameView.swift; sourceTree = "<group>"; };
+		7B228F0C2C89C98800D08499 /* RenameTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenameTools.swift; sourceTree = "<group>"; };
 		7B6883922C79BEB80011996D /* image.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = image.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B6883952C79BEB80011996D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7B6883972C79BEBA0011996D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -82,6 +86,8 @@
 				7B6883A22C79BF290011996D /* HomeViewController.swift */,
 				7BDF6B572C7C43B60046399E /* DraggableView.swift */,
 				7BDF6B592C7C43D40046399E /* CompressTools.swift */,
+				7B228F0A2C89C97500D08499 /* RenameView.swift */,
+				7B228F0C2C89C98800D08499 /* RenameTools.swift */,
 			);
 			path = image;
 			sourceTree = "<group>";
@@ -211,8 +217,10 @@
 			files = (
 				7BDF6B582C7C43B60046399E /* DraggableView.swift in Sources */,
 				7B6883962C79BEB80011996D /* AppDelegate.swift in Sources */,
+				7B228F0B2C89C97500D08499 /* RenameView.swift in Sources */,
 				7B6883A32C79BF290011996D /* HomeViewController.swift in Sources */,
 				7BDF6B5A2C7C43D40046399E /* CompressTools.swift in Sources */,
+				7B228F0D2C89C98800D08499 /* RenameTools.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
