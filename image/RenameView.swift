@@ -169,8 +169,8 @@ extension RenameView {
 extension RenameView {
     
     func creatUI() {
-        self.wantsLayer = true
-        self.layer?.backgroundColor = .white
+//        self.wantsLayer = true
+//        self.layer?.backgroundColor = .white
         
         self.addSubview(fileButton)
         fileButton.snp.makeConstraints { make in

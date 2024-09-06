@@ -58,3 +58,50 @@ struct CommonTools {
         return imageExtensions.contains(url.pathExtension.lowercased())
     }
 }
+
+class Throttler {
+    private var lastExecuted: Date?
+    private let queue: DispatchQueue
+    private let interval: TimeInterval
+    private var lastRequest: Date?
+    private var scheduledWorkItem: DispatchWorkItem?
+
+    init(interval: TimeInterval, queue: DispatchQueue = DispatchQueue.main) {
+        self.interval = interval
+        self.queue = queue
+        lastExecuted = Date(timeIntervalSince1970: 0)
+    }
+
+    func call(_ action: @escaping () -> Void) {
+        let now = Date()
+        lastRequest = now
+        
+        guard lastExecuted == nil || now.timeIntervalSince(lastExecuted!) >= interval else {
+            // If already have a scheduled work item, cancel it
+            scheduledWorkItem?.cancel()
+            
+            // Schedule a new work item
+            let workItem = DispatchWorkItem { [weak self] in
+                self?.lastExecuted = Date()
+                self?.performTask(action)
+            }
+            scheduledWorkItem = workItem
+            queue.asyncAfter(deadline: .now() + interval - now.timeIntervalSince(lastExecuted!)) {
+                // Ensure that lastRequest time hasn't changed
+                if self.lastRequest == now {
+                    workItem.perform()
+                }
+            }
+            return
+        }
+        
+        lastExecuted = now
+        performTask(action)
+    }
+    
+    func performTask(_ action: @escaping () -> Void) {
+        queue.async {
+            action()
+        }
+    }
+}

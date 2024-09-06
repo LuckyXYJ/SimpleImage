@@ -69,11 +69,12 @@ class DraggableView: NSView {
             fileTips.isHidden = fileList.count > 0
             addKeyView.isHidden = fileList.count > 0
             
-//            CompressTools.tinifyCompress(fileList) { [weak self] in
-//                DispatchQueue.main.async {
-//                    self?.tableView.reloadData()
-//                }
-//            }
+            CompressTools.tinifyCompress(fileList) { [weak self] in
+                guard let self else { return }
+                self.throttler.call { [weak self] in
+                    self?.tableView.reloadData()
+                }
+            }
         }
     }
     
@@ -86,6 +87,11 @@ class DraggableView: NSView {
     var clearButton: NSButton!
     
     var selectedRow: Int?
+    
+    lazy var throttler: Throttler = {
+        let throttler = Throttler(interval: 1.5) // 例如，间隔1秒
+        return throttler
+    }()
     
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -120,8 +126,8 @@ class DraggableView: NSView {
     
     func creatUI() {
         
-        self.wantsLayer = true
-        self.layer?.backgroundColor = .white
+//        self.wantsLayer = true
+//        self.layer?.backgroundColor = .white
         
         // 创建一个NSButton，并设置其大小和位置
         let button = NSButton()
@@ -378,14 +384,14 @@ extension DraggableView: NSTableViewDataSource, NSTableViewDelegate {
             
             if let cellView = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(columnIdentifier), owner: self) as? NSTableCellView {
                 if let textField = cellView.subviews.first as? NSTextField {
-                    textField.stringValue = imageFile.url.lastPathComponent
+                    textField.stringValue = imageFile.url.lastPathComponent + "(\(row))"
                 }
                 return cellView
             }
             
             let cellView = NSTableCellView()
             cellView.identifier = NSUserInterfaceItemIdentifier(columnIdentifier)
-            let textField = NSTextField(labelWithString: imageFile.url.lastPathComponent)
+            let textField = NSTextField(labelWithString: imageFile.url.lastPathComponent + "(\(row))")
             textField.autoresizingMask = [.width]
             cellView.addSubview(textField)
             textField.snp.makeConstraints({
@@ -398,14 +404,14 @@ extension DraggableView: NSTableViewDataSource, NSTableViewDelegate {
             
             if let cellView = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(columnIdentifier), owner: self) as? NSTableCellView {
                 if let textField = cellView.subviews.first as? NSTextField {
-                    textField.stringValue = imageFile.status.rawValue + "\(row)"
+                    textField.stringValue = imageFile.status.rawValue
                 }
                 return cellView
             }
             
             let cellView = NSTableCellView()
             cellView.identifier = NSUserInterfaceItemIdentifier(columnIdentifier)
-            let textField = NSTextField(labelWithString: imageFile.status.rawValue + "\(row)")
+            let textField = NSTextField(labelWithString: imageFile.status.rawValue)
             textField.autoresizingMask = [.width]
             cellView.addSubview(textField)
             textField.snp.makeConstraints({
