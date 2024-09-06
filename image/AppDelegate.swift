@@ -27,7 +27,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 //        window.minSize = NSSize(width: 200, height: fixedHeight)
 //        window.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: fixedHeight)
         window.center()
-        window.title = "Nicole"
+        window.title = "简图"
         window.makeKeyAndOrderFront(nil)
         
         

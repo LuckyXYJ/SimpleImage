@@ -38,7 +38,6 @@ enum ImageHandleStatus {
 
 class FileModel {
     var url: URL
-    var hasHandle = false
     var status: ImageHandleStatus = .waiting
     var size: UInt64?
     
@@ -86,6 +85,8 @@ class DraggableView: NSView {
     var tableView: NSTableView!
     var clearButton: NSButton!
     
+    var selectedRow: Int?
+    
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
         self.registerForDraggedTypes([.fileURL])
@@ -118,6 +119,9 @@ class DraggableView: NSView {
     }
     
     func creatUI() {
+        
+        self.wantsLayer = true
+        self.layer?.backgroundColor = .white
         
         // 创建一个NSButton，并设置其大小和位置
         let button = NSButton()
@@ -163,6 +167,7 @@ class DraggableView: NSView {
         
         scrolllView = NSScrollView()
         scrolllView.hasHorizontalScroller = true
+        scrolllView.hasVerticalScroller = true
         scrolllView.autohidesScrollers = true
         scrolllView.isHidden = true
         scrolllView.translatesAutoresizingMaskIntoConstraints = false
@@ -194,6 +199,13 @@ class DraggableView: NSView {
 //            make.edges.equalTo(scrolllView.contentView)
 //            make.width.equalTo(scrolllView.contentView)
 //        }
+        let menu = NSMenu()
+        menu.delegate = self
+        menu.addItem(NSMenuItem(title: "Open Finder", action: #selector(openFinder), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "Preview Image", action: #selector(previewImage), keyEquivalent: ""))
+                
+        // Set tableView's menu to your custom created menu
+        tableView.menu = menu
         
         let thumbnailColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("ThumbnailColumn"))
         thumbnailColumn.title = "Thumbnail"
@@ -208,7 +220,7 @@ class DraggableView: NSView {
         tableView.addTableColumn(statusColumn)
         
         let nameColumn = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("NameColumn"))
-        nameColumn.title = "Name"
+        nameColumn.title = "Name1"
 //        thumbnailColumn.width = 200
         nameColumn.headerCell = NSTableHeaderCell(textCell: "Name")
         nameColumn.resizingMask = .autoresizingMask
@@ -273,8 +285,66 @@ class DraggableView: NSView {
             }
         }
     }
+    override func rightMouseDown(with event: NSEvent) {
+        let point = tableView.convert(event.locationInWindow, from: nil)
+        selectedRow = tableView.row(at: point)
+        super.rightMouseDown(with: event)
+    }
+    
+    
+    @objc func imageViewClicked(_ sender: NSClickGestureRecognizer) {
+        guard let imageView = sender.view as? NSImageView else { return }
+        guard let image = imageView.image else { return }
+        showPreviewWindow(with: image)
+    }
+    
+    func showPreviewWindow(with image: NSImage) {
+        // 创建新的窗口或视图控制器来显示预览图片
+        let previewViewController = NSViewController()
+        // 设置窗口内容
+        let previewImageView = NSImageView()
+        previewImageView.image = image
+        previewImageView.frame = previewViewController.view.bounds
+        previewImageView.autoresizingMask = [.width, .height]
+        previewViewController.view.addSubview(previewImageView)
+        
+        // 创建新窗口
+        let previewWindow = NSWindow(contentViewController: previewViewController)
+        previewWindow.setContentSize(NSSize(width: 400, height: 400))
+        previewWindow.styleMask = [.titled, .closable, .resizable]
+        previewWindow.title = "Image Preview"
+        
+        let windowController = NSWindowController(window: previewWindow)
+        windowController.showWindow(self)
+    }
+    
+    func getCurrentRow() -> Int? {
+        guard let mouseLocation = self.tableView.window?.mouseLocationOutsideOfEventStream else { return nil }
+        let tableViewLocation = self.tableView.convert(mouseLocation, from: nil)
+        let row = self.tableView.row(at: tableViewLocation)
+        return row
+    }
+    // 菜单项的动作方法
+    @objc func openFinder(_ sender: NSMenuItem) {
+        guard let row = selectedRow else { return }
+        let imageFile = fileList[row]
+        let fileURL = imageFile.url
+        NSWorkspace.shared.selectFile(fileURL.path, inFileViewerRootedAtPath: "")
+    }
+    // 预览
+    @objc func previewImage(_ sender: NSMenuItem) {
+        guard let row = selectedRow else { return }
+        let imageFile = fileList[row]
+        let fileURL = imageFile.url
+        NSWorkspace.shared.open(fileURL)
+    }
 }
 
+extension DraggableView: NSMenuDelegate {
+    func menuWillOpen(_ menu: NSMenu) {
+        selectedRow = getCurrentRow()
+    }
+}
 
 extension DraggableView: NSTableViewDataSource, NSTableViewDelegate {
     func numberOfRows(in tableView: NSTableView) -> Int {
@@ -328,14 +398,14 @@ extension DraggableView: NSTableViewDataSource, NSTableViewDelegate {
             
             if let cellView = tableView.makeView(withIdentifier: NSUserInterfaceItemIdentifier(columnIdentifier), owner: self) as? NSTableCellView {
                 if let textField = cellView.subviews.first as? NSTextField {
-                    textField.stringValue = imageFile.status.rawValue
+                    textField.stringValue = imageFile.status.rawValue + "\(row)"
                 }
                 return cellView
             }
             
             let cellView = NSTableCellView()
             cellView.identifier = NSUserInterfaceItemIdentifier(columnIdentifier)
-            let textField = NSTextField(labelWithString: imageFile.status.rawValue)
+            let textField = NSTextField(labelWithString: imageFile.status.rawValue + "\(row)")
             textField.autoresizingMask = [.width]
             cellView.addSubview(textField)
             textField.snp.makeConstraints({
@@ -424,6 +494,7 @@ class AddKeyView: NSView {
             defaults.set(stringArray, forKey: tinyUserDefaultsKey)
             showContent(text: keyField.stringValue)
         } else {
+            defaults.set(nil, forKey: tinyUserDefaultsKey)
             showContent(text: nil)
         }
     }
